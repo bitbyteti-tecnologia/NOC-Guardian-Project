@@ -2,6 +2,36 @@ version: '3.8'
 
 services:
   # ============================================================================
+  # Serviço 0: Traefik (Reverse Proxy & SSL Manager)
+  # ============================================================================
+  traefik:
+    image: traefik:v2.10
+    container_name: guardian-proxy
+    restart: always
+    command:
+      - "--api.insecure=false" # Dashboard desabilitado para segurança externa
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Redirecionamento HTTP -> HTTPS Global
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      # Configuração Let's Encrypt (Certificados SSL Automáticos)
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=admin@bitbyteti.tec.br" # Email para notificações de expiração
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - guardian-net
+
+  # ============================================================================
   # Serviço 1: Guardian Central (API Cloud)
   # ============================================================================
   central:
@@ -10,12 +40,20 @@ services:
       dockerfile: Dockerfile
     container_name: guardian-central
     restart: always
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000" # Porta interna exposta apenas para o Traefik
     environment:
       - POSTGRES_USER=guardian
       - POSTGRES_PASSWORD=guardian_pass
       - POSTGRES_DB=guardian_db
+    labels:
+      - "traefik.enable=true"
+      # Configuração do Router (Domínio)
+      - "traefik.http.routers.central.rule=Host(`noc.bitbyteti.tec.br`)"
+      - "traefik.http.routers.central.entrypoints=websecure"
+      - "traefik.http.routers.central.tls.certresolver=myresolver"
+      # Configuração do Service (Porta interna)
+      - "traefik.http.services.central.loadbalancer.server.port=8000"
     depends_on:
       - db
     networks:
@@ -31,11 +69,11 @@ services:
     container_name: guardian-node
     restart: always
     environment:
-      # Aponta para o serviço 'central' dentro da rede Docker
-      - CENTRAL_URL=http://central:8000/ingest/telemetry
+      # Agora aponta para o domínio público com HTTPS
+      - CENTRAL_URL=https://noc.bitbyteti.tec.br/ingest/telemetry
       - NODE_ID=NODE-TEST-ARM64-01
     depends_on:
-      - central
+      - central # Mantém dependência para garantir que a stack suba junto
     networks:
       - guardian-net
 

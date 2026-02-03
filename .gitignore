@@ -20,3 +20,7 @@ Desktop.ini
 # Logs
 *.log
 logs/
+
+# SSL Certificates (Let's Encrypt)
+letsencrypt/
+
