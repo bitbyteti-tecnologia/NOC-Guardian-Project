@@ -31,6 +31,13 @@ async def health_check() -> Dict[str, str]:
     return {"status": "running", "service": "Guardian Central"}
 
 # ==============================================================================
+# Rota Raiz (Landing)
+# ==============================================================================
+@app.get("/")
+async def root() -> Dict[str, str]:
+    return {"message": "Guardian Central online", "docs": "/docs", "health": "/health"}
+
+# ==============================================================================
 # Rota de Ingestão de Dados (Exemplo)
 # ==============================================================================
 # Função: Receber telemetria enviada pelos Guardian NODEs.
