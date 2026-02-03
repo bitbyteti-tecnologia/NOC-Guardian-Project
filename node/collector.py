@@ -12,11 +12,13 @@
 
 import time
 import json
-import random
+import os
+import requests
 
 # Simulação de configuração local
-NODE_ID = "NODE-CLIENT-001"
-CENTRAL_URL = "https://api.guardian-central.com/ingest"
+# Obtém configuração via Variáveis de Ambiente (Boas Práticas para Containers)
+NODE_ID = os.getenv("NODE_ID", "NODE-CLIENT-001")
+CENTRAL_URL = os.getenv("CENTRAL_URL", "https://api.guardian-central.com/ingest/telemetry")
 
 def collect_metrics():
     """
@@ -84,8 +86,17 @@ def main_loop():
             # 3. Envio (Outbound Only)
             # O NODE sempre inicia a conexão, evitando portas abertas no Firewall (Inbound).
             print(f"[TUNNEL] Enviando payload seguro para {CENTRAL_URL}...")
-            # requests.post(CENTRAL_URL, json={"payload": secure_payload}) # Exemplo real
             
+            try:
+                # Envio real via HTTP POST
+                response = requests.post(CENTRAL_URL, json={"payload": secure_payload}, timeout=5)
+                if response.status_code == 200:
+                     print(f"[SUCESSO] Central confirmou recebimento: {response.json()}")
+                else:
+                     print(f"[ERRO] Falha no envio: {response.status_code} - {response.text}")
+            except Exception as req_err:
+                print(f"[ERRO DE CONEXÃO] Não foi possível contatar a Central: {req_err}")
+
             # Aguarda o próximo ciclo de coleta (ex: 60 segundos)
             time.sleep(5) 
             

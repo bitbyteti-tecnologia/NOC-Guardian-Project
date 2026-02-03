@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # Serviço 1: Guardian Central (API Cloud)
+  # ============================================================================
+  central:
+    build: 
+      context: ./central
+      dockerfile: Dockerfile
+    container_name: guardian-central
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_USER=guardian
+      - POSTGRES_PASSWORD=guardian_pass
+      - POSTGRES_DB=guardian_db
+    depends_on:
+      - db
+    networks:
+      - guardian-net
+
+  # ============================================================================
+  # Serviço 2: Guardian NODE (Coletor Edge)
+  # ============================================================================
+  node:
+    build: 
+      context: ./node
+      dockerfile: Dockerfile
+    container_name: guardian-node
+    restart: always
+    environment:
+      # Aponta para o serviço 'central' dentro da rede Docker
+      - CENTRAL_URL=http://central:8000/ingest/telemetry
+      - NODE_ID=NODE-TEST-ARM64-01
+    depends_on:
+      - central
+    networks:
+      - guardian-net
+
+  # ============================================================================
+  # Serviço 3: Banco de Dados (PostgreSQL)
+  # ============================================================================
+  db:
+    image: postgres:15-alpine
+    container_name: guardian-db
+    restart: always
+    environment:
+      - POSTGRES_USER=guardian
+      - POSTGRES_PASSWORD=guardian_pass
+      - POSTGRES_DB=guardian_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - guardian-net
+
+# ==============================================================================
+# Redes e Volumes
+# ==============================================================================
+networks:
+  guardian-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
