@@ -42,12 +42,21 @@ class Telemetry(Base):
 # ==============================================================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 1) Garante que a tabela ORM exista (DDL padrão)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # 2) Extensão TimescaleDB (cada passo em conexão separada para evitar transações inválidas)
+    async with engine.connect() as conn:
         try:
             await conn.execute(text("CREATE EXTENSION IF NOT EXISTS timescaledb;"))
+            await conn.commit()
         except Exception as e:
+            await conn.rollback()
             print(f"Info: TimescaleDB extension not available or already installed: {e}")
+
+    # 3) Tabela fallback explícita (caso Base.create_all não tenha criado por conflitos)
+    async with engine.connect() as conn:
         try:
             await conn.execute(
                 text(
@@ -59,11 +68,18 @@ async def lifespan(app: FastAPI):
                     ");"
                 )
             )
+            await conn.commit()
         except Exception as e:
+            await conn.rollback()
             print(f"Info: Fallback table creation skipped or failed: {e}")
+
+    # 4) Conversão para hypertable (se Timescale estiver ativo)
+    async with engine.connect() as conn:
         try:
             await conn.execute(text("SELECT create_hypertable('public.telemetry', 'timestamp', if_not_exists => TRUE);"))
+            await conn.commit()
         except Exception as e:
+            await conn.rollback()
             print(f"Info: Hypertable setup skipped or failed (OK if using standard Postgres): {e}")
     yield
     # Encerramento

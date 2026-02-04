@@ -108,6 +108,7 @@ services:
     image: timescale/timescaledb:latest-pg15
     container_name: guardian-db
     restart: always
+    command: ["postgres", "-c", "shared_preload_libraries=timescaledb"]
     environment:
       - POSTGRES_USER=guardian
       - POSTGRES_PASSWORD=guardian_pass
