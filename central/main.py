@@ -30,6 +30,7 @@ class Base(DeclarativeBase):
 
 class Telemetry(Base):
     __tablename__ = "telemetry"
+    __table_args__ = {"schema": "public"}
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)
@@ -41,14 +42,27 @@ class Telemetry(Base):
 # ==============================================================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Inicialização: Aguardar DB e criar tabelas
-    # Em produção, usar Alembic para migrações. Aqui, create_all para simplificar.
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Tenta converter tabela em hypertable (TimescaleDB)
-        # Se falhar (ex: não for Timescale ou já existir), apenas logamos o erro/aviso
         try:
-            await conn.execute(text("SELECT create_hypertable('telemetry', 'timestamp', if_not_exists => TRUE);"))
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS timescaledb;"))
+        except Exception as e:
+            print(f"Info: TimescaleDB extension not available or already installed: {e}")
+        try:
+            await conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS public.telemetry ("
+                    "id SERIAL PRIMARY KEY,"
+                    "timestamp TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),"
+                    "node_id TEXT,"
+                    "payload JSONB NOT NULL"
+                    ");"
+                )
+            )
+        except Exception as e:
+            print(f"Info: Fallback table creation skipped or failed: {e}")
+        try:
+            await conn.execute(text("SELECT create_hypertable('public.telemetry', 'timestamp', if_not_exists => TRUE);"))
         except Exception as e:
             print(f"Info: Hypertable setup skipped or failed (OK if using standard Postgres): {e}")
     yield
