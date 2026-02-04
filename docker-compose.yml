@@ -102,10 +102,10 @@ services:
       - guardian-net
 
   # ============================================================================
-  # Serviço 3: Banco de Dados (PostgreSQL)
+  # Serviço 3: Banco de Dados (TimescaleDB)
   # ============================================================================
   db:
-    image: postgres:15-alpine
+    image: timescale/timescaledb:latest-pg15
     container_name: guardian-db
     restart: always
     environment:

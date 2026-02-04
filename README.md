@@ -58,6 +58,19 @@ A instalação no cliente é automatizada e baseada em Docker para facilitar o s
   - `TELEMETRY_MAX_BYTES` (padrão: 1048576 bytes)
   - Ajuste via ambiente e recrie: `export TELEMETRY_MAX_BYTES=1048576 && docker compose up -d`
 
+## 📡 API Endpoints (Central)
+
+### Ingestão (Write)
+- **POST** `/ingest/telemetry`
+  - Headers: `Authorization: Bearer <TOKEN>`
+  - Body: JSON com dados do NODE (pode ser criptografado).
+  - Persiste dados na tabela `telemetry` (Hypertable TimescaleDB).
+
+### Leitura (Read - Dashboard)
+- **GET** `/telemetry`
+  - Query Params: `node_id` (opcional), `limit` (default 100), `skip` (default 0).
+  - Retorna lista de registros ordenados por data decrescente.
+
 ## 📜 Logs e Auditoria
 - Traefik com access logs habilitados (formato JSON) para auditoria
 - Ver logs:
