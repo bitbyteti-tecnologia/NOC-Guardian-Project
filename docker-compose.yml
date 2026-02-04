@@ -51,6 +51,7 @@ services:
       - POSTGRES_PASSWORD=guardian_pass
       - POSTGRES_DB=guardian_db
       - CENTRAL_TOKEN=${CENTRAL_TOKEN}
+      - TELEMETRY_MAX_BYTES=${TELEMETRY_MAX_BYTES:-1048576}
     labels:
       - "traefik.enable=true"
       # Configuração do Router (Domínio)
