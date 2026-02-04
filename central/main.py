@@ -10,7 +10,7 @@
 # ==============================================================================
 
 from fastapi import FastAPI, HTTPException, Header, Request
-from typing import Dict
+from typing import Dict, Optional
 import os
 
 # Inicialização da aplicação FastAPI
@@ -46,7 +46,7 @@ async def root() -> Dict[str, str]:
 # Função: Receber telemetria enviada pelos Guardian NODEs.
 # Segurança: Em produção, este endpoint deve ser protegido por mTLS e Tokens.
 @app.post("/ingest/telemetry")
-async def ingest_telemetry(data: Dict, authorization: str | None = Header(None), request: Request = None):
+async def ingest_telemetry(data: Dict, authorization: Optional[str] = Header(None), request: Request = None):
     cl = request.headers.get("content-length") if request else None
     if cl and int(cl) > TELEMETRY_MAX_BYTES:
         raise HTTPException(status_code=413, detail="Payload Too Large")
