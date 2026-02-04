@@ -38,6 +38,32 @@ O NODE foi desenhado para ser "invisível" e inviolável:
 ## 📦 Instalação e Configuração no Cliente (Guardian NODE)
 A instalação no cliente é automatizada e baseada em Docker para facilitar o suporte.
 
+## 🔑 Segurança: Token de Ingestão
+- Defina os tokens apenas no servidor (sem versionar no repositório):
+  - `CENTRAL_TOKEN` protege o endpoint `/ingest/telemetry`
+  - `AUTH_TOKEN` é usado pelo NODE para enviar o header `Authorization: Bearer`
+- Habilitação via Docker Compose:
+  - No serviço `central`, a variável `CENTRAL_TOKEN` é lida do ambiente
+  - No serviço `node`, a variável `AUTH_TOKEN` é lida do ambiente
+- Aplicação:
+  - `export CENTRAL_TOKEN='SEU_TOKEN_FORTE'`
+  - `export AUTH_TOKEN='SEU_TOKEN_FORTE'`
+  - `docker compose up -d --build`
+- Teste:
+  - `curl -s -X POST https://SEU_DOMINIO/ingest/telemetry -H "Content-Type: application/json" -H "Authorization: Bearer SEU_TOKEN_FORTE" -d '{"node":"TEST","metric":123}'`
+  - Sem `Authorization` ou com token errado: `401/403`
+
+## 📏 Limites de Payload
+- A API rejeita payloads acima do limite configurável:
+  - `TELEMETRY_MAX_BYTES` (padrão: 1048576 bytes)
+  - Ajuste via ambiente e recrie: `export TELEMETRY_MAX_BYTES=1048576 && docker compose up -d`
+
+## 📜 Logs e Auditoria
+- Traefik com access logs habilitados (formato JSON) para auditoria
+- Ver logs:
+  - Proxy: `docker logs -f guardian-proxy`
+  - Central: `docker logs -f guardian-central`
+
 ## 🛡️ Hardening do Servidor/Node (Linux)
 Procedimento obrigatório antes do deploy do Docker:
 1.  **Fail2Ban & UFW:** Bloqueio de ataques de força bruta e fechamento total de portas desnecessárias.

@@ -16,6 +16,8 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--accesslog=true"
+      - "--accesslog.format=json"
       # Redirecionamento HTTP -> HTTPS Global
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
@@ -48,6 +50,7 @@ services:
       - POSTGRES_USER=guardian
       - POSTGRES_PASSWORD=guardian_pass
       - POSTGRES_DB=guardian_db
+      - CENTRAL_TOKEN=${CENTRAL_TOKEN}
     labels:
       - "traefik.enable=true"
       # Configuração do Router (Domínio)
@@ -82,6 +85,7 @@ services:
       # Agora aponta para o domínio público com HTTPS
       - CENTRAL_URL=https://noc.bitbyteti.tec.br/ingest/telemetry
       - NODE_ID=NODE-TEST-ARM64-01
+      - AUTH_TOKEN=${AUTH_TOKEN}
     depends_on:
       - central # Mantém dependência para garantir que a stack suba junto
     networks:

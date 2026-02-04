@@ -14,11 +14,13 @@ import time
 import json
 import os
 import requests
+import random
 
 # Simulação de configuração local
 # Obtém configuração via Variáveis de Ambiente (Boas Práticas para Containers)
 NODE_ID = os.getenv("NODE_ID", "NODE-CLIENT-001")
 CENTRAL_URL = os.getenv("CENTRAL_URL", "https://api.guardian-central.com/ingest/telemetry")
+AUTH_TOKEN = os.getenv("AUTH_TOKEN")
 
 def collect_metrics():
     """
@@ -89,7 +91,8 @@ def main_loop():
             
             try:
                 # Envio real via HTTP POST
-                response = requests.post(CENTRAL_URL, json={"payload": secure_payload}, timeout=5)
+                headers = {"Authorization": f"Bearer {AUTH_TOKEN}"} if AUTH_TOKEN else {}
+                response = requests.post(CENTRAL_URL, json={"payload": secure_payload}, headers=headers, timeout=5)
                 if response.status_code == 200:
                      print(f"[SUCESSO] Central confirmou recebimento: {response.json()}")
                 else:
