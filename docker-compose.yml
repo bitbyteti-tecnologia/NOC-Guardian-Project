@@ -62,6 +62,14 @@ services:
       - "traefik.docker.network=guardian-net"
       # Configuração do Service (Porta interna)
       - "traefik.http.services.central.loadbalancer.server.port=8000"
+      # Rate limiting aplicado especificamente ao prefixo /ingest
+      - "traefik.http.middlewares.central-ratelimit.ratelimit.average=10"
+      - "traefik.http.middlewares.central-ratelimit.ratelimit.burst=20"
+      - "traefik.http.routers.central-ingest.rule=Host(`noc.bitbyteti.tec.br`) && PathPrefix(`/ingest`)"
+      - "traefik.http.routers.central-ingest.entrypoints=websecure"
+      - "traefik.http.routers.central-ingest.tls=true"
+      - "traefik.http.routers.central-ingest.tls.certresolver=myresolver"
+      - "traefik.http.routers.central-ingest.middlewares=central-ratelimit"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).status==200 else 1)\""]
       interval: 10s
@@ -87,6 +95,7 @@ services:
       - CENTRAL_URL=https://noc.bitbyteti.tec.br/ingest/telemetry
       - NODE_ID=NODE-TEST-ARM64-01
       - AUTH_TOKEN=${AUTH_TOKEN}
+      - NODE_INTERVAL_SECONDS=${NODE_INTERVAL_SECONDS:-30}
     depends_on:
       - central # Mantém dependência para garantir que a stack suba junto
     networks:

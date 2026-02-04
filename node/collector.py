@@ -100,8 +100,8 @@ def main_loop():
             except Exception as req_err:
                 print(f"[ERRO DE CONEXÃO] Não foi possível contatar a Central: {req_err}")
 
-            # Aguarda o próximo ciclo de coleta (ex: 60 segundos)
-            time.sleep(5) 
+            interval = int(os.getenv("NODE_INTERVAL_SECONDS", "30"))
+            time.sleep(interval) 
             
         except KeyboardInterrupt:
             print("Parando serviço NODE...")
