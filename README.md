@@ -1,93 +1,113 @@
-# NOC - Guardian | Observability & Proactivity System
+NOC-Guardian | Observability & Proactivity System
 
-O **NOC - Guardian** é um sistema de **Network Operations Center** Multi-Tenant de última geração. Ele utiliza uma arquitetura de "Inteligência Distribuída" para monitoramento proativo, eliminando as falhas de segurança e complexidade de ferramentas legadas.
+O NOC-Guardian é uma plataforma moderna de Network Operations Center (NOC) baseada em uma arquitetura de Inteligência Distribuída, projetada para ambientes Multi-Tenant, alta segurança e monitoramento proativo.
 
-> **REGRA DE OURO:** Todo arquivo gerado deve conter comentários detalhados explicando a função de cada bloco e cada linha de código para fins educacionais e de manutenção.
+O sistema elimina limitações de ferramentas legadas ao distribuir coleta, processamento e inteligência de forma segura e escalável.
 
-## 🏗️ Arquitetura de Inteligência Distribuída
-O sistema opera em três camadas para garantir segurança máxima e carga mínima no servidor central:
+🧠 Arquitetura de Inteligência Distribuída
 
-1.  **Guardian Central (Cloud):** O cérebro do sistema. Gerencia o Dashboard Multi-Tenant, o banco de dados principal e a orquestração de IA para causa raiz.
-2.  **Guardian NODE (Edge Proxy):** Um coletor inteligente instalado na rede local do cliente (suporta **Docker x86-64 e ARM6**). Ele realiza o scan SNMP local, centraliza os dados dos agentes e os envia via túnel seguro para a Central. Como instalar e configurar no cliente
-3.  **Guardian Agents:** Pequenos serviços instalados em servidores Windows/Linux que reportam telemetria diretamente ao NODE ou à Central.
+O NOC-Guardian opera em três camadas independentes:
 
-## 🚀 Tecnologias Core
-*   **Frontend:** React + Tailwind CSS (Interface reativa e intuitiva).
-*   **Backend:** Python (FastAPI) + Ansible (Remediação e Proatividade).
-*   **Banco de Dados:** PostgreSQL + TimeScaleDB (Séries temporais).
-*   **Infraestrutura:** Docker Multi-Arch (Buildx para suporte a x86-64 e ARM6/Raspberry Pi).
+Guardian Central (Cloud)
 
-## 🔒 NOC - Guardian NODE: Segurança e Operação
-O NODE foi desenhado para ser "invisível" e inviolável:
-*   **Outbound Only:** O NODE inicia todas as comunicações. Nenhuma porta de entrada (Inbound) precisa ser aberta no firewall do cliente.
-*   **Zero Trust Tunnel:** Comunicação com a Central via **TLS 1.3** com certificados rotativos e **MTLS** (Mutual TLS) opcional.
-*   **Data Scrubbing:** O NODE sanitiza e criptografa os dados locais com **AES-256** antes de despachá-los para a Central.
-*   **Local Buffer:** Em caso de queda de internet no cliente, o NODE armazena os dados localmente e faz o "backfill" automaticamente quando a conexão retorna.
+API e Dashboard Multi-Tenant
 
-## 🛠️ Funcionalidades de "Linha de Frente"
-*   **Network Scan Automático:** Varredura SNMP em tempo real para ativos (Switches, Roteadores, UniFi, Storages, Servidores Físicos, etc.).
-*   **IA de Causa Raiz (RCA):** Motor de correlação que aponta o "paciente zero" de uma queda de rede.
-*   **Diagnóstico Integrado:** Ferramentas de linha de comando acessíveis via interface web.
+Banco de dados central
 
-## 📂 Estrutura de Pastas
-- `/central`: API Cloud e Dashboard Multi-Tenant.
-- `/node`: Código do coletor inteligente (Proxy).
-- `/agents`: Binários compilados para Windows/Linux/ARM.
-- `/infra`: Scripts de Hardening e Dockerfiles Multi-Arch.
+Correlação de eventos e RCA
 
-## 📦 Instalação e Configuração no Cliente (Guardian NODE)
-A instalação no cliente é automatizada e baseada em Docker para facilitar o suporte.
+Orquestração de alertas e automações
 
-## 🔑 Segurança: Token de Ingestão
-- Defina os tokens apenas no servidor (sem versionar no repositório):
-  - `CENTRAL_TOKEN` protege o endpoint `/ingest/telemetry`
-  - `AUTH_TOKEN` é usado pelo NODE para enviar o header `Authorization: Bearer`
-- Habilitação via Docker Compose:
-  - No serviço `central`, a variável `CENTRAL_TOKEN` é lida do ambiente
-  - No serviço `node`, a variável `AUTH_TOKEN` é lida do ambiente
-- Aplicação:
-  - `export CENTRAL_TOKEN='SEU_TOKEN_FORTE'`
-  - `export AUTH_TOKEN='SEU_TOKEN_FORTE'`
-  - `docker compose up -d --build`
-- Teste:
-  - `curl -s -X POST https://SEU_DOMINIO/ingest/telemetry -H "Content-Type: application/json" -H "Authorization: Bearer SEU_TOKEN_FORTE" -d '{"node":"TEST","metric":123}'`
-  - Sem `Authorization` ou com token errado: `401/403`
+Guardian NODE (Edge Proxy)
 
-## 📏 Limites de Payload
-- A API rejeita payloads acima do limite configurável:
-  - `TELEMETRY_MAX_BYTES` (padrão: 1048576 bytes)
-  - Ajuste via ambiente e recrie: `export TELEMETRY_MAX_BYTES=1048576 && docker compose up -d`
+Coletor inteligente local
 
-## 📜 Logs e Auditoria
-- Traefik com access logs habilitados (formato JSON) para auditoria
-- Ver logs:
-  - Proxy: `docker logs -f guardian-proxy`
-  - Central: `docker logs -f guardian-central`
+Comunicação outbound-only
 
-## 🛡️ Hardening do Servidor/Node (Linux)
-Procedimento obrigatório antes do deploy do Docker:
-1.  **Fail2Ban & UFW:** Bloqueio de ataques de força bruta e fechamento total de portas desnecessárias.
-2.  **SSH Hardening:** Acesso apenas via chave RSA/ED25519; login de root desabilitado.
-3.  **Kernel Security:** Proteções contra ataques de rede (Spoofing, ICMP Redirects) via `sysctl` customizado.
-4.  **Auto-Update:** Configuração de `unattended-upgrades` para patches de segurança do SO.
+Criptografia e sanitização de dados
 
+Buffer local para contingência
 
-## 📊 Dashboards & Visualização (NOC UI)
-O Dashboard é dividido em camadas de visibilidade para garantir que o administrador identifique gargalos em segundos:
+Envio seguro para a Central
 
-### 1. Dashboard Principal (Visão Multi-Tenant)
-*   **Grid de Cards:** Cada card representa um cliente com status de saúde (Verde/Amarelo/Vermelho).
-*   **KPIs Globais:** Total de dispositivos monitorados, alertas críticos ativos e status dos links WAN principais de todos os clientes.
+Guardian Agents
 
-### 2. Dashboard do Cliente (Visão Detalhada)
-*   **Medidores de Velocímetro (Gauge Charts):** Monitoramento em tempo real de latência (Ping) e consumo de largura de banda (Upload/Download) para cada ISP.
-*   **Monitores de Rede WAN (ISP):**
-    *   Gráfico de estabilidade do link (Uptime/Downtime).
-    *   Perda de pacotes e Jitter para monitorar a qualidade do link de internet.
-*   **Monitores de Rede LAN:**
-    *   **Tabelas de Ativos:** Lista dinâmica de switches, roteadores e antenas UniFi.
-    *   **Mapa de Topologia:** Visualização gráfica de como os dispositivos estão conectados.
-*   **Cards de Monitoramento/Alerta:**
-    *   Logs de eventos recentes com cores por severidade.
-    *   Status de saúde dos Agentes Windows/Linux (CPU, RAM, Disco).
-*   **Bloco de Diagnóstico:** Ferramentas interativas (Ping/MTR) que exibem o resultado em um terminal simulado na tela.
+Serviços leves em Windows/Linux
+
+Coleta de telemetria
+
+Comunicação com NODE ou Central
+
+🔒 Segurança por Design
+
+Comunicação via TLS 1.3
+
+MTLS suportado
+
+Criptografia AES-256
+
+Zero Trust
+
+Nenhuma porta inbound no cliente
+
+Certificados rotativos
+
+Dados sanitizados antes do envio
+
+🚀 Tecnologias
+
+Frontend: React + Tailwind
+
+Backend: Python + FastAPI
+
+Automação: Ansible
+
+Banco: PostgreSQL + TimeScaleDB
+
+Infra: Docker Multi-Arch
+
+📂 Estrutura do Projeto
+central/   -> API, IA e Dashboard
+node/      -> Edge Proxy
+agents/    -> Agents Windows/Linux
+infra/     -> Docker, hardening, deploy
+
+📦 Deploy do Guardian NODE
+
+Baseado em Docker
+
+Compatível com x86-64 e ARM (Raspberry Pi)
+
+Comunicação segura automática
+
+Buffer local em caso de falha de internet
+
+🛡️ Hardening Obrigatório
+
+UFW / Firewall
+
+Fail2Ban
+
+SSH por chave
+
+Root login desabilitado
+
+Kernel hardening
+
+Atualizações automáticas
+
+📊 Interface NOC
+
+Visão Multi-Tenant
+
+Dashboards por cliente
+
+KPIs em tempo real
+
+Topologia de rede
+
+Diagnóstico interativo (Ping / MTR)
+
+📜 Regra de Ouro
+
+Todo código do NOC-Guardian é educacional, documentado e comentado linha por linha, garantindo transparência, manutenção e evolução segura.
