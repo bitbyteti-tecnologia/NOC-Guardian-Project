@@ -69,8 +69,8 @@ class DatabaseManager:
                 await conn.execute("""
                     CREATE TABLE IF NOT EXISTS tenants (
                         tenant_id TEXT PRIMARY KEY,
-                        name TEXT,
-                        status TEXT DEFAULT 'ACTIVE',
+                        name TEXT NOT NULL,
+                        status TEXT NOT NULL DEFAULT 'ACTIVE',
                         created_at TIMESTAMPTZ DEFAULT NOW()
                     );
                 """)
@@ -80,6 +80,7 @@ class DatabaseManager:
                     VALUES ('default', 'Default Tenant', 'ACTIVE')
                     ON CONFLICT (tenant_id) DO NOTHING;
                 """)
+                print("[DATABASE] Tabela 'tenants' verificada e tenant 'default' garantido.")
 
                 # 2.1 Tabela API KEYS (Autenticação)
                 await conn.execute("""

@@ -52,6 +52,7 @@ services:
     expose:
       - "8000" # Porta interna exposta apenas para o Traefik
     environment:
+      - POSTGRES_HOST=db
       - POSTGRES_USER=guardian
       - POSTGRES_PASSWORD=guardian_pass
       - POSTGRES_DB=guardian_db
