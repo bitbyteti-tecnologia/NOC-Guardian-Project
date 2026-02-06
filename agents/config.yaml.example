@@ -1,0 +1,18 @@
+# Configuração do Guardian Agent Enterprise
+
+# URL base do Guardian NODE ou Central (ex: http://guardian-node:8000)
+node_url: "http://localhost:8000"
+
+# Chave de API do Tenant (Obrigatório)
+# O Agente utilizará esta chave no header X-API-Key
+api_key: "noc_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+# Intervalo de Coleta em segundos
+collection_interval: 60
+
+# ID do Agente (Opcional - se vazio, usa hostname)
+# agent_id: "server-01"
+
+# Configurações de Rede (Latência)
+# Alvo para teste de conectividade (Ping HTTP)
+network_target: "8.8.8.8"
