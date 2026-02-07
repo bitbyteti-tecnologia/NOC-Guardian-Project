@@ -14,12 +14,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check Configuration
+        run: |
+          echo "Checking environment variables..."
+          if [ -z "${{ vars.PROD_HOST }}" ]; then echo "ERROR: PROD_HOST is empty"; exit 1; fi
+          if [ -z "${{ vars.PROD_USER }}" ]; then echo "ERROR: PROD_USER is empty"; exit 1; fi
+          echo "Host: ${{ vars.PROD_HOST }}"
+          echo "User: ${{ vars.PROD_USER }}"
+          echo "Configuration check passed."
+
       - name: Deploy to Production Server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.PROD_HOST }}
           username: ${{ vars.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
+          port: 22
+          debug: true
+          script_stop: true
+          command_timeout: 30m
           script: |
             cd /opt/NOC-Guardian-Project
             git pull origin master
