@@ -11,10 +11,12 @@ services:
     command:
       - "--api.insecure=false" # Dashboard desabilitado para segurança externa
       - "--ping=true" # Habilita endpoint /ping para Healthcheck
+      - "--ping.entrypoint=traefik_ping" # Define entrypoint específico para ping
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.traefik_ping.address=:8082" # Porta interna dedicada para healthcheck
       - "--accesslog=true"
       - "--accesslog.format=json"
       # Redirecionamento HTTP -> HTTPS Global
@@ -34,7 +36,7 @@ services:
     networks:
       - guardian-net
     healthcheck:
-      test: ["CMD", "traefik", "healthcheck"]
+      test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1:8082/ping"]
       interval: 30s
       timeout: 10s
       retries: 3
