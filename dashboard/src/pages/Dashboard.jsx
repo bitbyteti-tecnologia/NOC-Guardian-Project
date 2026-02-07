@@ -5,9 +5,10 @@ import NodeTable from '../components/NodeTable';
 import { GlobalTimeline } from '../components/Timeline';
 import { AlertPanel } from '../components/ActiveAlerts';
 import Logo from '../components/Logo';
-import { Clock, ShieldCheck, Bell } from 'lucide-react';
+import Header from '../components/Header';
+import { Clock, Bell, Menu } from 'lucide-react';
 
-export default function Dashboard() {
+export default function Dashboard({ toggleSidebar }) {
     const [nodes, setNodes] = useState([]);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [lastUpdate, setLastUpdate] = useState(new Date());
@@ -38,7 +39,7 @@ export default function Dashboard() {
                     source: 'SYS_MON'
                 });
             } else if (node.status === 'WARNING') {
-                 newEvents.push({
+                newEvents.push({
                     event_type: 'ALERT',
                     severity: 'WARNING',
                     node_id: node.node_id,
@@ -128,65 +129,28 @@ export default function Dashboard() {
     const activeAlerts = events.filter(e => e.severity === 'CRITICAL' || e.severity === 'WARNING');
 
     return (
-        <div className="flex-1 bg-slate-950 min-h-screen relative overflow-y-auto custom-scrollbar flex flex-col">
+        <div className="flex-1 min-h-screen relative overflow-y-auto custom-scrollbar flex flex-col ml-0 lg:ml-20 pt-16 transition-all duration-300">
              {/* Dynamic Background */}
-             <div className="fixed inset-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black -z-20 pointer-events-none"></div>
-             <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 -z-10 pointer-events-none brightness-50 contrast-150"></div>
+             <div className="fixed inset-0 w-full h-full bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.15),_transparent_50%)] -z-20 pointer-events-none"></div>
+             <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 -z-10 pointer-events-none brightness-50 contrast-150"></div>
 
-            {/* 1. TOPO (Header Global) */}
-            <div className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 shadow-lg px-8 py-4 flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <Logo size="icon" />
-                    <div className="h-6 w-px bg-slate-800 mx-2"></div>
-                    <span className="text-slate-400 font-mono text-xs tracking-widest uppercase">Central Command</span>
-                </div>
-                
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-3 px-4 py-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                        <div className="relative">
-                            <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping absolute opacity-75"></div>
-                            <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full relative shadow-[0_0_5px_rgba(16,185,129,0.8)]"></div>
-                        </div>
-                        <span className="text-emerald-400 text-xs font-bold tracking-wider uppercase">System Operational</span>
-                    </div>
+            {/* Fixed Header */}
+            <Header toggleSidebar={toggleSidebar} metrics={metrics} currentTime={currentTime} />
 
-                    <div className="flex items-center gap-3 text-slate-300 font-mono text-sm bg-slate-900 px-4 py-2 rounded-lg border border-slate-800">
-                        <Clock size={16} className="text-blue-400" />
-                        <span>{currentTime.toLocaleTimeString()}</span>
-                    </div>
-                    
-                    <button className="relative p-2 text-slate-400 hover:text-white transition-colors">
-                        <Bell size={20} />
-                        {metrics.criticalCount > 0 && (
-                            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping border border-slate-950"></span>
-                        )}
-                    </button>
-                    
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-[1px]">
-                        <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
-                             <span className="font-bold text-white">OP</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="p-8 flex flex-col gap-8 max-w-[1920px] mx-auto w-full">
+            <div className="w-full px-4 sm:px-6 lg:px-8 flex flex-col gap-4 md:gap-6 lg:gap-8 mx-auto py-6">
                 
                 {/* 2. HERO CENTRAL */}
-                <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-slate-900/40 p-12 text-center group">
-                    <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent blur-sm"></div>
-                    
-                    <div className="relative z-10 flex flex-col items-center justify-center gap-6">
-                        <div className="scale-125 mb-4 drop-shadow-[0_0_25px_rgba(59,130,246,0.3)] animate-pulse-slow">
+                <div className="relative mb-6 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 p-6 sm:p-8 lg:p-10 shadow-2xl shadow-cyan-500/10">
+                    <div className="relative z-10 flex flex-col items-center justify-center gap-4">
+                        <div className="scale-100 md:scale-125 mb-2 drop-shadow-[0_0_25px_rgba(56,189,248,0.3)] animate-pulse-slow">
                             <Logo />
                         </div>
-                        <div className="space-y-2">
-                            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-                                Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">NOC Guardian</span>
+                        <div className="space-y-2 text-center">
+                            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight drop-shadow-[0_0_15px_rgba(56,189,248,0.3)]">
+                                Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38bdf8] to-[#10b981]">NOC Guardian</span>
                             </h1>
-                            <p className="text-slate-400 text-lg tracking-wide font-light max-w-2xl mx-auto">
-                                Monitoring, analyzing and protecting your infrastructure with advanced real-time diagnostics.
+                            <p className="text-slate-400 mt-2 text-sm md:text-base tracking-wide font-light max-w-3xl mx-auto leading-relaxed hidden sm:block">
+                                Monitoring, analyzing and protecting your infrastructure in real time
                             </p>
                         </div>
                     </div>
@@ -196,10 +160,10 @@ export default function Dashboard() {
                 <StatusGrid metrics={metrics} />
 
                 {/* 4. MAIN CONTENT SPLIT */}
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                     
-                    {/* Left Column (2/3) */}
-                    <div className="xl:col-span-2 flex flex-col gap-8">
+                    {/* Left Column (2/3 on Desktop) */}
+                    <div className="xl:col-span-2 flex flex-col gap-4 md:gap-6">
                         {/* Infrastructure Nodes Table */}
                         <NodeTable nodes={nodes} />
                         
@@ -209,10 +173,10 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Right Column (1/3) */}
+                    {/* Right Column (1/3 on Desktop) */}
                     <div className="xl:col-span-1 h-full min-h-[500px]">
-                        {/* Alert Panel - Sticky if content allows */}
-                        <div className="sticky top-28 h-[calc(100vh-140px)]">
+                        {/* Alert Panel - Sticky on Desktop */}
+                        <div className="xl:sticky xl:top-28 h-auto xl:h-[calc(100vh-140px)]">
                             <AlertPanel alerts={activeAlerts} />
                         </div>
                     </div>
