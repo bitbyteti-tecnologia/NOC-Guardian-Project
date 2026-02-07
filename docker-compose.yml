@@ -10,6 +10,7 @@ services:
       - DOCKER_API_VERSION=1.44
     command:
       - "--api.insecure=false" # Dashboard desabilitado para segurança externa
+      - "--ping=true" # Habilita endpoint /ping para Healthcheck
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
