@@ -111,3 +111,11 @@ Diagnóstico interativo (Ping / MTR)
 📜 Regra de Ouro
 
 Todo código do NOC-Guardian é educacional, documentado e comentado linha por linha, garantindo transparência, manutenção e evolução segura.
+
+## Deploy Produção
+
+Atualizar tudo:
+./ops/deploy_prod.sh
+
+Atualizar apenas Dashboard:
+./ops/rebuild_dashboard.sh

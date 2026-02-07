@@ -24,3 +24,7 @@ logs/
 # SSL Certificates (Let's Encrypt)
 letsencrypt/
 
+# Build e Dependências
+node_modules
+dist
+build
