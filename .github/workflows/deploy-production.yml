@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: Production
+    environment: 'NOC-GUARDIAN - SERVER'
 
     steps:
       - name: Checkout code
