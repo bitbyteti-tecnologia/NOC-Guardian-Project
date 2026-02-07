@@ -75,6 +75,33 @@ else
     echo "ℹ️ Chave de deploy já configurada."
 fi
 
+# ============================================================================
+# CORREÇÃO PARA USUÁRIO UBUNTU (Caso o script rode como root mas o deploy use ubuntu)
+# ============================================================================
+if id "ubuntu" &>/dev/null; then
+    echo ">>> Detectado usuário 'ubuntu'. Configurando chaves para ele também..."
+    
+    UBUNTU_SSH="/home/ubuntu/.ssh"
+    mkdir -p "$UBUNTU_SSH"
+    chmod 700 "$UBUNTU_SSH"
+    touch "$UBUNTU_SSH/authorized_keys"
+    chmod 600 "$UBUNTU_SSH/authorized_keys"
+
+    # Adiciona chaves para o usuário ubuntu
+    if ! grep -q "rsa-key-20220219" "$UBUNTU_SSH/authorized_keys"; then
+        echo "$USER_KEY" >> "$UBUNTU_SSH/authorized_keys"
+        echo "✅ Chave pessoal adicionada para 'ubuntu'."
+    fi
+
+    if ! grep -q "noc-guardian-deploy-key" "$UBUNTU_SSH/authorized_keys"; then
+        echo "$DEPLOY_KEY" >> "$UBUNTU_SSH/authorized_keys"
+        echo "✅ Chave de deploy adicionada para 'ubuntu'."
+    fi
+    
+    # Corrige permissões
+    chown -R ubuntu:ubuntu "$UBUNTU_SSH"
+fi
+
 echo ">>> [5/5] CONCLUÍDO!"
 echo "===================================================="
 echo "SERVIDOR PREPARADO COM SUCESSO."
