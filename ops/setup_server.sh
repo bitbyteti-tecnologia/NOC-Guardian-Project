@@ -110,12 +110,112 @@ if id "ubuntu" &>/dev/null; then
         echo "✅ Chave de deploy adicionada para 'ubuntu'."
     fi
     
-    # Corrige permissões
+    # Corrige dono do diretório SSH
     chown -R ubuntu:ubuntu "$UBUNTU_SSH"
 fi
 
-echo ">>> [5/5] CONCLUÍDO!"
-echo "===================================================="
-echo "SERVIDOR PREPARADO COM SUCESSO."
+# ============================================================================
+# NOC GUARDIAN - HARDENING (MANDATÓRIO)
+# ============================================================================
+echo ">>> [5/5] Aplicando Hardening de Segurança (README Compliant)..."
+
+# 1. Atualizações Automáticas
+echo "Configurando Unattended Upgrades..."
+sudo apt-get install -y unattended-upgrades
+sudo dpkg-reconfigure -plow unattended-upgrades || true
+
+# 2. Firewall (UFW)
+echo "Configurando UFW (Firewall)..."
+if command -v ufw &> /dev/null; then
+    sudo ufw default deny incoming
+    sudo ufw default allow outgoing
+    sudo ufw allow 22/tcp
+    sudo ufw allow 80/tcp
+    sudo ufw allow 443/tcp
+    # Habilita sem pedir confirmação
+    echo "y" | sudo ufw enable
+    echo "✅ UFW Ativado: Portas 22, 80, 443 permitidas."
+else
+    echo "⚠️ UFW não instalado. Instalando..."
+    sudo apt-get install -y ufw
+    sudo ufw default deny incoming
+    sudo ufw allow 22/tcp
+    sudo ufw allow 80/tcp
+    sudo ufw allow 443/tcp
+    echo "y" | sudo ufw enable
+fi
+
+# 3. Fail2Ban
+echo "Configurando Fail2Ban..."
+sudo apt-get install -y fail2ban
+# Cria configuração local para não sobrescrever updates
+if [ ! -f /etc/fail2ban/jail.local ]; then
+    echo "[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 3600" | sudo tee /etc/fail2ban/jail.local
+    sudo systemctl restart fail2ban
+    echo "✅ Fail2Ban configurado para SSH."
+fi
+
+# 4. SSH Hardening (Desabilitar Root e Senhas)
+echo "Aplicando SSH Hardening (Desabilitando Root Login e Password Auth)..."
+SSHD_CONFIG="/etc/ssh/sshd_config"
+
+# Backup do config original
+if [ ! -f "${SSHD_CONFIG}.bak" ]; then
+    sudo cp $SSHD_CONFIG "${SSHD_CONFIG}.bak"
+fi
+
+# Ajustes de segurança
+sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' $SSHD_CONFIG
+sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' $SSHD_CONFIG
+sudo sed -i 's/^#*ChallengeResponseAuthentication.*/ChallengeResponseAuthentication no/' $SSHD_CONFIG
+sudo sed -i 's/^#*UsePAM.*/UsePAM yes/' $SSHD_CONFIG
+
+# Reinicia SSH para aplicar (se syntax ok)
+if sudo sshd -t; then
+    sudo systemctl restart sshd
+    echo "✅ SSH Hardening aplicado com sucesso."
+else
+    echo "❌ Erro na configuração do SSH. Revertendo..."
+    sudo cp "${SSHD_CONFIG}.bak" $SSHD_CONFIG
+    sudo systemctl restart sshd
+fi
+
+# 5. Kernel Hardening (Network Stack)
+echo "Aplicando Kernel Hardening..."
+cat <<EOF | sudo tee /etc/sysctl.d/99-guardian-security.conf
+# Proteção contra IP Spoofing
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.conf.all.rp_filter = 1
+
+# Desabilitar redirecionamentos ICMP (Man-in-the-Middle)
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv4.conf.all.secure_redirects = 0
+net.ipv4.conf.default.secure_redirects = 0
+
+# Ignorar pings de broadcast (Smurf attack protection)
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+# Habilitar proteção contra SYN Flood
+net.ipv4.tcp_syncookies = 1
+
+# Desabilitar Source Routing
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.accept_source_route = 0
+EOF
+
+# Aplica configurações
+sudo sysctl -p /etc/sysctl.d/99-guardian-security.conf
+echo "✅ Kernel Hardening aplicado."
+
+echo "=========================================="
+echo "✅ SETUP E HARDENING CONCLUÍDOS!"
+echo "=========================================="
 echo "Pode disparar o deploy no GitHub Actions agora."
 echo "===================================================="
