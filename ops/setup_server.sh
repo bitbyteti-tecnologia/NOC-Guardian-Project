@@ -1,28 +1,39 @@
 #!/bin/bash
 
 # ==========================================
-# NOC GUARDIAN - SERVER SETUP SCRIPT
-# ==========================================
-# Este script prepara o servidor Ubuntu para receber o deploy.
-# Ele instala Docker, cria as pastas e ajusta permissões.
-#
-# COMO USAR:
-# 1. Copie este arquivo para o servidor
-# 2. Dê permissão: chmod +x setup_server.sh
-# 3. Execute: sudo ./setup_server.sh
+# NOC GUARDIAN - SERVER SETUP SCRIPT (V2)
 # ==========================================
 
 set -e
 
-echo ">>> [1/5] Atualizando sistema e instalando dependências..."
-sudo apt-get update -qq
-sudo apt-get install -y git docker.io docker-compose-plugin curl
+echo ">>> [1/5] Verificando ambiente Docker..."
 
-echo ">>> [2/5] Configurando Docker..."
+# Verifica se Docker já existe para evitar conflitos de pacotes (Erro containerd.io)
+if command -v docker &> /dev/null; then
+    echo "✅ Docker já detectado. Pulando instalação para evitar conflitos."
+else
+    echo "⚠️ Docker não encontrado. Iniciando instalação robusta..."
+    
+    # Remove pacotes conflitantes antigos, se houver
+    echo "Limpando versões antigas/conflitantes..."
+    for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
+        sudo apt-get remove -y $pkg || true
+    done
+
+    # Instala via script oficial (trata melhor as dependências do Ubuntu)
+    echo "Instalando Docker via script oficial..."
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sudo sh get-docker.sh
+fi
+
+# Garante apenas as ferramentas essenciais
+echo "Verificando git e curl..."
+sudo apt-get update -qq
+sudo apt-get install -y git curl
+
+echo ">>> [2/5] Configurando Serviço Docker..."
 sudo systemctl enable docker
 sudo systemctl start docker
-# Adiciona o usuário atual ao grupo docker para não precisar de sudo
-sudo usermod -aG docker $USER || true
 
 echo ">>> [3/5] Criando diretório do projeto..."
 TARGET_DIR="/opt/NOC-Guardian-Project"
@@ -34,7 +45,7 @@ else
     echo "Diretório já existe: $TARGET_DIR"
 fi
 
-# Ajusta permissões para o usuário atual
+# Permissões (seguro para rodar como root ou user)
 sudo chown -R $USER:$USER "$TARGET_DIR"
 sudo chmod -R 775 "$TARGET_DIR"
 
@@ -47,7 +58,7 @@ chmod 600 ~/.ssh/authorized_keys
 # Adiciona a chave fornecida pelo usuário (garantia de acesso)
 KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqLTHEXQnjbmBXlTq7QvdFydDliSD17sA3iS7Np0KBBJoLsOS2mwyUFhEsbxeKv07oPXA1ClakWXPAFAkszPnb1+07PZp7QpINxQmdOM43uFdOV3JH+8Ca8s6FyzNkfm2HzRSZLSpUMeginBNePFYvYhCT9O8A2VDIwZ90L7VpY3QjSrrp1IZ7x4eYGzUs3vX7ZN/HALU5Li3++ESSrdy7kGJWFe8+/ACD+WrhRmbIA/7hy5ZvLNCYUcS9bxCAkDhZwDh2eCuvVxyCXUTdKS9dgH/kQGL1JNQaMFHnhGMaLUAdR72xACdl82VZc9VfcxhOKHrj2ar+Hpge1hOuHWsh rsa-key-20220219"
 
-if ! grep -q "$KEY" ~/.ssh/authorized_keys; then
+if ! grep -q "rsa-key-20220219" ~/.ssh/authorized_keys; then
     echo "$KEY" >> ~/.ssh/authorized_keys
     echo "Chave SSH adicionada com sucesso."
 else
@@ -56,12 +67,6 @@ fi
 
 echo ">>> [5/5] CONCLUÍDO!"
 echo "===================================================="
-echo "SEU SERVIDOR ESTÁ PRONTO."
-echo "===================================================="
-echo "Para finalizar a conexão com o GitHub:"
-echo "1. Pegue sua CHAVE PÚBLICA (id_rsa.pub) da sua máquina local."
-echo "2. Cole ela dentro do arquivo ~/.ssh/authorized_keys neste servidor."
-echo "3. O IP deste servidor é:"
-curl -s ifconfig.me
-echo ""
+echo "SERVIDOR PREPARADO COM SUCESSO."
+echo "Pode disparar o deploy no GitHub Actions agora."
 echo "===================================================="
