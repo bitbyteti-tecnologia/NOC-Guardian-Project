@@ -55,14 +55,24 @@ chmod 700 ~/.ssh
 touch ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 
-# Adiciona a chave fornecida pelo usuário (garantia de acesso)
-KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqLTHEXQnjbmBXlTq7QvdFydDliSD17sA3iS7Np0KBBJoLsOS2mwyUFhEsbxeKv07oPXA1ClakWXPAFAkszPnb1+07PZp7QpINxQmdOM43uFdOV3JH+8Ca8s6FyzNkfm2HzRSZLSpUMeginBNePFYvYhCT9O8A2VDIwZ90L7VpY3QjSrrp1IZ7x4eYGzUs3vX7ZN/HALU5Li3++ESSrdy7kGJWFe8+/ACD+WrhRmbIA/7hy5ZvLNCYUcS9bxCAkDhZwDh2eCuvVxyCXUTdKS9dgH/kQGL1JNQaMFHnhGMaLUAdR72xACdl82VZc9VfcxhOKHrj2ar+Hpge1hOuHWsh noc-guardian-deploy-key"
+# Chaves SSH (Usuário + Deploy)
+USER_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqLTHEXQnjbmBXlTq7QvdFydDliSD17sA3iS7Np0KBBJoLsOS2mwyUFhEsbxeKv07oPXA1ClakWXPAFAkszPnb1+07PZp7QpINxQmdOM43uFdOV3JH+8Ca8s6FyzNkfm2HzRSZLSpUMeginBNePFYvYhCT9O8A2VDIwZ90L7VpY3QjSrrp1IZ7x4eYGzUs3vX7ZN/HALU5Li3++ESSrdy7kGJWFe8+/ACD+WrhRmbIA/7hy5ZvLNCYUcS9bxCAkDhZwDh2eCuvVxyCXUTdKS9dgH/kQGL1JNQaMFHnhGMaLUAdR72xACdl82VZc9VfcxhOKHrj2ar+Hpge1hOuHWsh rsa-key-20220219"
+DEPLOY_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC83d5euvI1u44Et5M0RunM4tEDS9I83e2h/JqjXjXw0VsRWen2CL9aSa07NOeJ3pQeQke5tb8d0Ncy0Im5Sust5q2k1OGdcqcewyelnrx0FGWOUrAlPVsN8zBshFwpKimeXubT6F7Rgytokmbn/Bm6ckIvXqNKTdipn+aDw3K0QQlHLDFfiu2gsivz/Ukva7DxFh+IqF4os38P31DjCV9PnPia/jurAF5m6Rovn83SIAKeS5WMFpAui5tvBDfa3gug+YW7ricmBa+GErC48mUxQE9iZzpv63ASlumgwnN+J7fiZjIy+GOUnU6ghruEEe6FJ2XB/KDzIVK1Hi+fbyefr9Ucj95vQA+4Ljlehh5R/TT/ihpHOfXMrhD4gjF9eOe7siuP9U0SItCdCzPgrAHTAmNfkSlDMlyNUcsGYCfKX8tToNAn8WC+nU67SDpxU/fYvFqqvajLZnYzf3+WgnkgVk3eSi58Fmuq64WL1A80x+MO57iVTp10a84BVfXRntRIQ1BkUF54u/f9L6ljKxpTR3Z+fbeKrVBug08PS+T8qu9VCSNXSRMAhTHtSuoBNeCseROtSrbqJUD4JfRc7WpYT/ZVYEqu6B9bYIzL/5hahR5DMO1PdLZeb9txMShz0W/MTJ+Z34b6VlLUYqMjAAHsTfdVs8H1ERLaC9P9VwpO8w== noc-guardian-deploy-key"
 
-if ! grep -q "noc-guardian-deploy-key" ~/.ssh/authorized_keys; then
-    echo "$KEY" >> ~/.ssh/authorized_keys
-    echo "Chave SSH adicionada com sucesso."
+# 1. Adiciona chave do usuário (Se não existir)
+if ! grep -q "rsa-key-20220219" ~/.ssh/authorized_keys; then
+    echo "$USER_KEY" >> ~/.ssh/authorized_keys
+    echo "✅ Chave pessoal adicionada."
 else
-    echo "Chave SSH já estava configurada."
+    echo "ℹ️ Chave pessoal já configurada."
+fi
+
+# 2. Adiciona chave de deploy (Se não existir)
+if ! grep -q "noc-guardian-deploy-key" ~/.ssh/authorized_keys; then
+    echo "$DEPLOY_KEY" >> ~/.ssh/authorized_keys
+    echo "✅ Chave de deploy adicionada."
+else
+    echo "ℹ️ Chave de deploy já configurada."
 fi
 
 echo ">>> [5/5] CONCLUÍDO!"
