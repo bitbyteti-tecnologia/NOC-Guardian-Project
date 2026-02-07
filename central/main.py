@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import text, select, desc
+from sqlalchemy import text, select, desc, DateTime, func
 from sqlalchemy.dialects.postgresql import JSONB
 
 # ==============================================================================
@@ -32,8 +32,8 @@ class Telemetry(Base):
     __tablename__ = "telemetry"
     __table_args__ = {"schema": "public"}
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), primary_key=True, index=True)
     node_id: Mapped[str] = mapped_column(index=True)
     payload: Mapped[Dict[str, Any]] = mapped_column(JSONB)
 
@@ -61,10 +61,11 @@ async def lifespan(app: FastAPI):
             await conn.execute(
                 text(
                     "CREATE TABLE IF NOT EXISTS public.telemetry ("
-                    "id SERIAL PRIMARY KEY,"
-                    "timestamp TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),"
+                    "id BIGSERIAL NOT NULL,"
+                    "timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),"
                     "node_id TEXT,"
                     "payload JSONB NOT NULL"
+                    ", PRIMARY KEY (timestamp, id)"
                     ");"
                 )
             )
