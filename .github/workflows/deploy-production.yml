@@ -14,13 +14,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check Configuration
+      - name: Pre-flight Diagnostics
         run: |
-          echo "Checking environment configuration..."
-          # Check if secrets are available (values will be masked in logs)
-          if [ -z "${{ secrets.PROD_HOST }}" ]; then echo "ERROR: PROD_HOST secret is empty"; exit 1; fi
-          if [ -z "${{ secrets.PROD_USER }}" ]; then echo "ERROR: PROD_USER secret is empty"; exit 1; fi
-          echo "Configuration check passed. Secrets are present."
+          echo "--- START DIAGNOSTICS ---"
+          echo "1. Checking Secrets existence..."
+          [ -n "${{ secrets.PROD_HOST }}" ] && echo "OK: Host is set" || echo "FAIL: Host is missing"
+          [ -n "${{ secrets.PROD_USER }}" ] && echo "OK: User is set" || echo "FAIL: User is missing"
+          [ -n "${{ secrets.PROD_SSH_KEY }}" ] && echo "OK: Key is set" || echo "FAIL: Key is missing"
+          
+          echo "2. Checking Network Connectivity (Port 22)..."
+          if nc -zv -w 10 ${{ secrets.PROD_HOST }} 22; then
+            echo "OK: Connection to Port 22 successful"
+          else
+            echo "FAIL: Cannot connect to Port 22. Check Firewall or IP address."
+            exit 1
+          fi
+          echo "--- END DIAGNOSTICS ---"
 
       - name: Deploy to Production Server via SSH
         uses: appleboy/ssh-action@v1.0.3
