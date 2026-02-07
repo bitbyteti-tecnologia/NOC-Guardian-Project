@@ -20,6 +20,8 @@ import uuid
 import asyncio
 import logging
 import sys
+import hashlib
+import traceback
 from datetime import datetime
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.exceptions import InvalidTag
@@ -62,6 +64,13 @@ async def startup_event():
     # Inicializa conexão com banco de dados
     await db.connect()
     
+    # Log de Segurança (Diagnóstico de Chaves)
+    if GUARDIAN_SECRET_KEY:
+        key_hash = hashlib.sha256(GUARDIAN_SECRET_KEY.encode()).hexdigest()[:8]
+        logger.info(f"[SECURITY DEBUG] GUARDIAN_SECRET_KEY Hash: {key_hash}...")
+    else:
+        logger.critical("[SECURITY ERROR] GUARDIAN_SECRET_KEY não definida!")
+
     logger.info(f"Default Tenant: default")
     logger.info(f"System Ready for Ingestion")
 
@@ -461,10 +470,15 @@ async def register_node(data: Dict, authorization: Optional[str] = Header(None),
         raise HTTPException(status_code=400, detail="Registration Failed: Invalid Signature (Key Mismatch?)")
     except ValueError as ve:
         logger.error(f"[REGISTER ERROR] Erro de Valor: {ve}")
-        raise HTTPException(status_code=400, detail=f"Registration Failed: {str(ve)}")
+        # Retornar traceback no log do servidor para debug profundo
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=f"Registration Failed: ValueError - {str(ve)}")
     except Exception as e:
         logger.error(f"[REGISTER ERROR] Falha no registro: {e}")
-        raise HTTPException(status_code=400, detail=f"Registration Failed: {str(e)}")
+        traceback.print_exc()
+        # Forçar string de erro explícita
+        error_msg = f"{type(e).__name__}: {str(e)}"
+        raise HTTPException(status_code=400, detail=f"Registration Failed: {error_msg}")
 
 
 # ==============================================================================

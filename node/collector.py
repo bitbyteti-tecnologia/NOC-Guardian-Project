@@ -21,6 +21,7 @@ import socket
 import logging
 import sys
 import shutil
+import hashlib
 from collections import deque
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.exceptions import InvalidTag
@@ -332,6 +333,12 @@ def main_loop():
     """
     logger.info(f"Iniciando Guardian NODE {NODE_ID} (v{NODE_VERSION})...")
     
+    if GUARDIAN_SECRET_KEY:
+        key_hash = hashlib.sha256(GUARDIAN_SECRET_KEY.encode()).hexdigest()[:8]
+        logger.info(f"[SECURITY DEBUG] GUARDIAN_SECRET_KEY Hash: {key_hash}...")
+    else:
+        logger.critical("[SECURITY ERROR] GUARDIAN_SECRET_KEY não definida!")
+
     # ==============================================================================
     # Fase de Registro (Lifecycle: STARTUP)
     # ==============================================================================
