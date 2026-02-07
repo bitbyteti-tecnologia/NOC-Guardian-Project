@@ -86,21 +86,30 @@ jobs:
             echo "Waiting for services to initialize (30s)..."
             sleep 30
             
-            # Check for unhealthy containers
-            if sudo docker compose ps | grep -i "unhealthy"; then
-              echo "❌ CRITICAL: Unhealthy services detected!"
+            echo "Current Container Status:"
+            sudo docker compose ps
+            
+            # 1. Validation: Unhealthy containers
+            if sudo docker compose ps | grep -q "unhealthy"; then
+              echo "❌ ERROR: One or more containers are unhealthy"
               sudo docker compose ps
               sudo docker compose logs --tail=50
               exit 1
             fi
             
-            # Check if containers are actually running
-            if ! sudo docker compose ps | grep -q "Up"; then
-              echo "❌ CRITICAL: No services are running!"
+            # 2. Validation: Exited or Restarting containers
+            if sudo docker compose ps | grep -E "Exit|Restarting"; then
+              echo "❌ ERROR: Container failure detected (Exited or Restarting)"
               sudo docker compose ps
               exit 1
             fi
             
-            echo "✅ HEALTH CHECK PASSED: All services are running and healthy."
-            sudo docker compose ps
+            # 3. Validation: General Up check
+            if ! sudo docker compose ps | grep -q "Up"; then
+              echo "❌ ERROR: No services are running!"
+              sudo docker compose ps
+              exit 1
+            fi
+            
+            echo "✅ SUCCESS: All containers are Up, Healthy and Stable."
             echo "NOC Guardian deployed successfully"
