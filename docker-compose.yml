@@ -128,7 +128,7 @@ services:
     labels:
       - "traefik.enable=true"
       # Router Catch-All para o Frontend
-      - "traefik.http.routers.dashboard.rule=Host(`noc.bitbyteti.tec.br`)"
+      - "traefik.http.routers.dashboard.rule=Host(`noc.bitbyteti.tec.br`) && !PathPrefix(`/api`)"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.routers.dashboard.priority=1"
       - "traefik.http.routers.dashboard.tls=true"
