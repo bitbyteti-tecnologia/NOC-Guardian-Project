@@ -72,7 +72,11 @@ jobs:
             git config --global --add safe.directory /opt/NOC-Guardian-Project
             
             cd /opt/NOC-Guardian-Project
-            git pull origin master
+            
+            # Reset local changes to match remote exactly (prevents conflicts)
+            git fetch origin master
+            git reset --hard origin/master
+            
             docker compose down
             docker compose build --no-cache
             docker compose up -d
