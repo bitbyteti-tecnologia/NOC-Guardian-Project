@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: Production
 
     steps:
       - name: Checkout code
@@ -16,8 +17,8 @@ jobs:
       - name: Deploy to Production Server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
+          host: ${{ vars.PROD_HOST }}
+          username: ${{ vars.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             cd /opt/NOC-Guardian-Project
