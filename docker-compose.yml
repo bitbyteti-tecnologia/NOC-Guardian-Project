@@ -78,13 +78,13 @@ services:
       - "traefik.http.routers.central-api.priority=100"
       - "traefik.http.routers.central-api.tls=true"
       - "traefik.http.routers.central-api.tls.certresolver=myresolver"
-      - "traefik.http.services.central-api.loadbalancer.server.port=8000"
+      - "traefik.http.routers.central-api.service=central"
 
       # Router Health
       - "traefik.http.routers.central-health.rule=Host(`noc.bitbyteti.tec.br`) && PathPrefix(`/health`)"
       - "traefik.http.routers.central-health.entrypoints=websecure"
       - "traefik.http.routers.central-health.tls=true"
-      - "traefik.http.services.central-health.loadbalancer.server.port=8000"
+      - "traefik.http.routers.central-health.service=central"
 
       # Router de Ingestão (Rate Limited)
       - "traefik.http.routers.central-ingest.rule=Host(`noc.bitbyteti.tec.br`) && PathPrefix(`/ingest`)"
@@ -92,6 +92,7 @@ services:
       - "traefik.http.routers.central-ingest.tls=true"
       - "traefik.http.routers.central-ingest.tls.certresolver=myresolver"
       - "traefik.http.routers.central-ingest.middlewares=central-ratelimit"
+      - "traefik.http.routers.central-ingest.service=central"
       
       # Rate Limiting Definition
       - "traefik.http.middlewares.central-ratelimit.ratelimit.average=10"
