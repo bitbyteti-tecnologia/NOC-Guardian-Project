@@ -28,3 +28,6 @@ letsencrypt/
 node_modules
 dist
 build
+
+# Chaves SSH (Segurança)
+ops/keys/
