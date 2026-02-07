@@ -66,13 +66,30 @@ async def startup_event():
     
     # Log de Segurança (Diagnóstico de Chaves)
     if GUARDIAN_SECRET_KEY:
-        key_hash = hashlib.sha256(GUARDIAN_SECRET_KEY.encode()).hexdigest()[:8]
-        logger.info(f"[SECURITY DEBUG] GUARDIAN_SECRET_KEY Hash: {key_hash}...")
+        try:
+            key_bytes = bytes.fromhex(GUARDIAN_SECRET_KEY)
+            if len(key_bytes) != 32:
+                logger.critical(f"[SECURITY FATAL] GUARDIAN_SECRET_KEY tem {len(key_bytes)} bytes. DEVE ter 32 bytes (64 hex chars)!")
+                logger.critical("A Criptografia falhará. Verifique o arquivo .env ou docker-compose.yml.")
+            else:
+                key_hash = hashlib.sha256(GUARDIAN_SECRET_KEY.encode()).hexdigest()[:8]
+                logger.info(f"[SECURITY DEBUG] GUARDIAN_SECRET_KEY Hash: {key_hash}... (Length OK: 32 bytes)")
+        except ValueError:
+            logger.critical("[SECURITY FATAL] GUARDIAN_SECRET_KEY não é uma string HEX válida!")
     else:
         logger.critical("[SECURITY ERROR] GUARDIAN_SECRET_KEY não definida!")
 
     logger.info(f"Default Tenant: default")
     logger.info(f"System Ready for Ingestion")
+
+@app.get("/debug/ping")
+async def debug_ping():
+    return {
+        "status": "ok", 
+        "version": APP_VERSION,
+        "env": GUARDIAN_ENV,
+        "key_configured": bool(GUARDIAN_SECRET_KEY)
+    }
 
 if not GUARDIAN_SECRET_KEY:
     # AVISO: Em produção, isso deve impedir o startup. 

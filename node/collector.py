@@ -42,6 +42,19 @@ AUTH_TOKEN = os.getenv("AUTH_TOKEN")
 # Chave de Criptografia Global (Deve ser 32 bytes em HEX)
 GUARDIAN_SECRET_KEY = os.getenv("GUARDIAN_SECRET_KEY")
 
+# Validação de Segurança no Startup
+if GUARDIAN_SECRET_KEY:
+    try:
+        key_bytes = bytes.fromhex(GUARDIAN_SECRET_KEY)
+        if len(key_bytes) != 32:
+            logger.critical(f"[SECURITY FATAL] GUARDIAN_SECRET_KEY tem {len(key_bytes)} bytes. DEVE ter 32 bytes (64 hex chars)!")
+            sys.exit(1) # Falha catastrófica
+        else:
+            logger.info("[SECURITY] GUARDIAN_SECRET_KEY validada com sucesso.")
+    except ValueError:
+        logger.critical("[SECURITY FATAL] GUARDIAN_SECRET_KEY não é uma string HEX válida!")
+        sys.exit(1)
+
 # ==============================================================================
 # Buffer Local (Store & Forward)
 # ==============================================================================
