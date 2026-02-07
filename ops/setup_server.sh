@@ -45,8 +45,15 @@ else
     echo "Diretório já existe: $TARGET_DIR"
 fi
 
-# Permissões (seguro para rodar como root ou user)
-sudo chown -R $USER:$USER "$TARGET_DIR"
+# Define usuário proprietário (ubuntu se existir, senão o atual)
+OWNER="ubuntu"
+if ! id "$OWNER" &>/dev/null; then
+    OWNER="$USER"
+fi
+
+# Permissões recursivas
+echo "Ajustando permissões para usuário: $OWNER"
+sudo chown -R $OWNER:$OWNER "$TARGET_DIR"
 sudo chmod -R 775 "$TARGET_DIR"
 
 echo ">>> [4/5] Verificando configuração SSH..."
