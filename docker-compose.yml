@@ -64,13 +64,26 @@ services:
     labels:
       - "traefik.enable=true"
       
-      # Router Principal (API e Docs) - Prioridade via Regra Específica
-      - "traefik.http.routers.central.rule=Host(`noc.bitbyteti.tec.br`) && (PathPrefix(`/api`) || PathPrefix(`/docs`) || PathPrefix(`/redoc`) || PathPrefix(`/openapi.json`) || PathPrefix(`/health`))"
+      # Router Docs
+      - "traefik.http.routers.central.rule=Host(`noc.bitbyteti.tec.br`) && (PathPrefix(`/docs`) || PathPrefix(`/redoc`) || PathPrefix(`/openapi.json`))"
       - "traefik.http.routers.central.entrypoints=websecure"
       - "traefik.http.routers.central.tls=true"
       - "traefik.http.routers.central.tls.certresolver=myresolver"
       - "traefik.docker.network=guardian-net"
       - "traefik.http.services.central.loadbalancer.server.port=8000"
+
+      # Router API
+      - "traefik.http.routers.central-api.rule=Host(`noc.bitbyteti.tec.br`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.central-api.entrypoints=websecure"
+      - "traefik.http.routers.central-api.tls=true"
+      - "traefik.http.routers.central-api.tls.certresolver=myresolver"
+      - "traefik.http.services.central-api.loadbalancer.server.port=8000"
+
+      # Router Health
+      - "traefik.http.routers.central-health.rule=Host(`noc.bitbyteti.tec.br`) && PathPrefix(`/health`)"
+      - "traefik.http.routers.central-health.entrypoints=websecure"
+      - "traefik.http.routers.central-health.tls=true"
+      - "traefik.http.services.central-health.loadbalancer.server.port=8000"
 
       # Router de Ingestão (Rate Limited)
       - "traefik.http.routers.central-ingest.rule=Host(`noc.bitbyteti.tec.br`) && PathPrefix(`/ingest`)"

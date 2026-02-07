@@ -91,6 +91,70 @@ async def debug_ping():
         "key_configured": bool(GUARDIAN_SECRET_KEY)
     }
 
+# ==============================================================================
+# Endpoint para Dashboard: Status dos Nodes
+# ==============================================================================
+@app.get("/api/nodes/status")
+async def get_nodes_status():
+    """
+    Retorna o status consolidado de todos os nodes baseado na última telemetria.
+    Nunca deve retornar 'Node not found'.
+    """
+
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch("""
+                SELECT DISTINCT ON (node_id)
+                    node_id,
+                    timestamp,
+                    payload
+                FROM telemetry
+                ORDER BY node_id, timestamp DESC
+            """)
+
+        result = []
+
+        for row in rows:
+            payload = row["payload"]
+
+            # Garantir dict
+            if isinstance(payload, str):
+                payload = json.loads(payload)
+
+            system_health = payload.get("system_health", {})
+
+            cpu = float(system_health.get("cpu_usage", 0))
+            ram = float(system_health.get("memory_usage", 0))
+            disk = float(system_health.get("disk_usage", 0))
+
+            max_usage = max(cpu, ram, disk)
+            idr = 100 - max_usage
+
+            if idr >= 30:
+                status = "HEALTHY"
+            elif idr >= 10:
+                status = "WARNING"
+            else:
+                status = "CRITICAL"
+
+            result.append({
+                "node_id": row["node_id"],
+                "last_seen": row["timestamp"].isoformat(),
+                "cpu": cpu,
+                "ram": ram,
+                "disk": disk,
+                "idr": round(idr, 2),
+                "status": status
+            })
+
+        # IMPORTANTE: se não houver dados, retornar lista vazia
+        return result
+
+    except Exception as e:
+        logger.error(f"[API ERROR] /api/nodes/status: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
 if not GUARDIAN_SECRET_KEY:
     # AVISO: Em produção, isso deve impedir o startup. 
     # Aqui permitimos, mas o endpoint falhará se chamado.
