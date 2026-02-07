@@ -150,7 +150,7 @@ export default function Dashboard({ toggleSidebar }) {
                                 Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38bdf8] to-[#10b981]">NOC Guardian</span>
                             </h1>
                             <p className="text-slate-400 mt-2 text-sm md:text-base tracking-wide font-light max-w-3xl mx-auto leading-relaxed hidden sm:block">
-                                Monitoring, analyzing and protecting your infrastructure in real time
+                                Monitoring, analyzing and correcting your infrastructure in real time
                             </p>
                         </div>
                     </div>
