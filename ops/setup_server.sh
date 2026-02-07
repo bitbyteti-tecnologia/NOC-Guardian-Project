@@ -26,6 +26,11 @@ else
     sudo sh get-docker.sh
 fi
 
+# Adiciona usuários ao grupo Docker
+echo "Adicionando usuários ao grupo Docker..."
+sudo usermod -aG docker $USER || true
+sudo usermod -aG docker ubuntu || true
+
 # Garante apenas as ferramentas essenciais
 echo "Verificando git e curl..."
 sudo apt-get update -qq
