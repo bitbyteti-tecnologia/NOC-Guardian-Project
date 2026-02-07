@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ============================================================================
   # Serviço 0: Traefik (Reverse Proxy & SSL Manager)

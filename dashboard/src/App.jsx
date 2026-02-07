@@ -1,23 +1,14 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Header } from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import NodeDetail from './pages/NodeDetail';
+import React from "react";
+import Sidebar from "./components/Sidebar";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
-  return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-        <Header />
-        <main className="flex-1 container mx-auto p-4 md:p-6">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/node/:id" element={<NodeDetail />} />
-          </Routes>
-        </main>
-      </div>
-    </BrowserRouter>
-  );
+    return (
+        <div className="flex bg-slate-900 min-h-screen text-slate-100 font-sans">
+            <Sidebar />
+            <Dashboard />
+        </div>
+    );
 }
 
 export default App;

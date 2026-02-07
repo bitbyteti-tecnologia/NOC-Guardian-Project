@@ -8,8 +8,9 @@ FROM node:20-alpine as builder
 WORKDIR /app
 
 # Install dependencies
-COPY package.json package-lock.json* ./
-RUN npm ci || npm install
+COPY package*.json ./
+RUN npm install -g npm@latest
+RUN npm install
 
 # Copy source code
 COPY . .
