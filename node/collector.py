@@ -20,6 +20,7 @@ import platform
 import socket
 import logging
 import sys
+import shutil
 from collections import deque
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.exceptions import InvalidTag
@@ -75,6 +76,15 @@ def collect_metrics():
     Returns:
         dict: Dicionário contendo as métricas coletadas.
     """
+    # Coleta de uso de disco (Robustez)
+    try:
+        total, used, free = shutil.disk_usage("/")
+        disk_usage_percent = (used / total) * 100
+        disk_free_gb = free / (1024 ** 3)
+    except Exception:
+        disk_usage_percent = None
+        disk_free_gb = None
+
     # Comentário Educacional:
     # Aqui estamos gerando dados aleatórios para demonstrar a estrutura do payload.
     metrics = {
@@ -87,10 +97,18 @@ def collect_metrics():
         },
         "system_health": {
             "cpu_usage": random.randint(10, 80),
-            "memory_usage": random.randint(20, 60)
+            "memory_usage": random.randint(20, 60),
+            "disk_usage": round(disk_usage_percent, 2) if disk_usage_percent is not None else 0,
+            "disk_free_gb": round(disk_free_gb, 2) if disk_free_gb is not None else 0
         }
     }
-    # Log local para debug
+    
+    # Log local para debug e validação
+    cpu = metrics["system_health"]["cpu_usage"]
+    ram = metrics["system_health"]["memory_usage"]
+    disk = metrics["system_health"]["disk_usage"]
+    logger.info(f"[METRICS] CPU={cpu}% RAM={ram}% DISK={disk}%")
+    
     logger.debug(f"[COLETA] Métricas obtidas em {metrics['timestamp']}")
     return metrics
 
@@ -209,10 +227,10 @@ def register_node():
     reg_payload = {
         "node_id": NODE_ID,
         "hostname": socket.gethostname(),
-        "ip": socket.gethostbyname(socket.gethostname()),
+        "ip_address": socket.gethostbyname(socket.gethostname()),
         "os": platform.system(),
         "arch": platform.machine(),
-        "version": NODE_VERSION,
+        "agent_version": NODE_VERSION,
         "timestamp": time.time()
     }
     

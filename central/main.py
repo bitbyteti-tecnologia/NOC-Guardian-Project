@@ -95,8 +95,8 @@ def get_tenant_key(tenant_id: str, node_id: str) -> str:
     return f"{tenant_id}:{node_id}"
 
 async def resolve_and_validate_tenant(
-    x_tenant_id: Optional[str] = Header(None, alias="X-Tenant-ID"),
-    x_api_key: Optional[str] = Header(None, alias="X-API-Key")
+    x_tenant_id: Optional[str] = None,
+    x_api_key: Optional[str] = None
 ) -> str:
     """
     Normaliza e valida o Tenant ID recebido.
@@ -372,13 +372,13 @@ async def root() -> Dict[str, str]:
 # Rota de Registro de NODE
 # ==============================================================================
 @app.post("/ingest/register")
-async def register_node(data: Dict, authorization: Optional[str] = Header(None), x_tenant_id: Optional[str] = Header(None)):
+async def register_node(data: Dict, authorization: Optional[str] = Header(None), x_tenant_id: Optional[str] = Header(None), x_api_key: Optional[str] = Header(None)):
     """
     Endpoint para registro inicial do NODE.
     Gera identidade única e distribui políticas de configuração.
     """
     # Guardrail: Validate Tenant
-    tenant_id = await resolve_and_validate_tenant(x_tenant_id)
+    tenant_id = await resolve_and_validate_tenant(x_tenant_id, x_api_key)
     
     if CENTRAL_TOKEN:
         if not authorization or not authorization.startswith("Bearer "):
@@ -395,6 +395,10 @@ async def register_node(data: Dict, authorization: Optional[str] = Header(None),
     try:
         # 1. Descriptografar payload de registro
         reg_data = decrypt_payload(encrypted_b64)
+        
+        # LOG DE DEBUG (Solicitado na Tarefa 4)
+        logger.info(f"[REGISTER DEBUG] Payload recebido (Decrypted): {reg_data}")
+        
         node_id = reg_data.get("node_id")
         
         if not node_id:
@@ -412,10 +416,10 @@ async def register_node(data: Dict, authorization: Optional[str] = Header(None),
             "node_id": node_id,
             "tenant_id": tenant_id,
             "hostname": reg_data.get("hostname"),
-            "ip": reg_data.get("ip"),
+            "ip": reg_data.get("ip_address") or reg_data.get("ip"), # Support both
             "os": reg_data.get("os"),
             "arch": reg_data.get("arch"),
-            "version": reg_data.get("version"),
+            "version": reg_data.get("agent_version") or reg_data.get("version"), # Support both
             "registered_at": current_time,
             "last_seen": current_time,
             "status": "ONLINE",
@@ -452,9 +456,15 @@ async def register_node(data: Dict, authorization: Optional[str] = Header(None),
         
         return {"payload": encrypted_policy}
 
+    except InvalidTag:
+        logger.warning(f"[REGISTER SECURITY] Falha na descriptografia (InvalidTag). Verifique se as chaves coincidem.")
+        raise HTTPException(status_code=400, detail="Registration Failed: Invalid Signature (Key Mismatch?)")
+    except ValueError as ve:
+        logger.error(f"[REGISTER ERROR] Erro de Valor: {ve}")
+        raise HTTPException(status_code=400, detail=f"Registration Failed: {str(ve)}")
     except Exception as e:
         logger.error(f"[REGISTER ERROR] Falha no registro: {e}")
-        raise HTTPException(status_code=400, detail="Registration Failed")
+        raise HTTPException(status_code=400, detail=f"Registration Failed: {str(e)}")
 
 
 # ==============================================================================
