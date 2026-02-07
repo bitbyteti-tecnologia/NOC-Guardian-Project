@@ -100,7 +100,7 @@ async def get_nodes_status():
     Retorna o status consolidado de todos os nodes baseado na última telemetria.
     Nunca deve retornar 'Node not found'.
     """
-
+    logger.info("[API DEBUG] /api/nodes/status called")
     try:
         async with db.pool.acquire() as conn:
             rows = await conn.fetch("""
@@ -196,6 +196,10 @@ async def resolve_and_validate_tenant(
     2. Tenant ID explícito (X-Tenant-ID)
     3. Default
     """
+    # DEBUG LOG
+    if x_api_key or x_tenant_id:
+        logger.info(f"[AUTH DEBUG] Validating Tenant. API Key: {'***' if x_api_key else 'None'}, Tenant ID: {x_tenant_id}")
+
     global TENANTS_CACHE, TENANTS_CACHE_TTL
     
     tenant_id = None
