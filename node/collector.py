@@ -50,7 +50,7 @@ GUARDIAN_SECRET_KEY = os.getenv("GUARDIAN_SECRET_KEY")
 BUFFER_MAX_SIZE = int(os.getenv("NODE_BUFFER_SIZE", "100"))
 local_buffer = deque(maxlen=BUFFER_MAX_SIZE)
 
-NODE_VERSION = "1.2.0-production"
+NODE_VERSION = "1.2.1-debug"
 # Variáveis de Controle de Intervalo (Podem ser atualizadas pela Policy)
 NODE_HEARTBEAT_INTERVAL = int(os.getenv("NODE_HEARTBEAT_INTERVAL", "60"))
 NODE_COLLECTION_INTERVAL = int(os.getenv("NODE_INTERVAL_SECONDS", "30"))

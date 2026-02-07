@@ -36,7 +36,7 @@ logging.basicConfig(
 logger = logging.getLogger("guardian-central")
 
 # Constantes de Versão
-APP_VERSION = "1.4.0-production"
+APP_VERSION = "1.4.1-debug"
 
 # Inicialização da aplicação FastAPI
 # Title: Nome do sistema exibido na documentação automática (Swagger UI)
