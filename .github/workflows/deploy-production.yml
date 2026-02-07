@@ -81,4 +81,26 @@ jobs:
             sudo docker compose build --no-cache
             sudo docker compose up -d
             sudo docker image prune -f
+            
+            echo "--- VERIFYING DEPLOYMENT HEALTH ---"
+            echo "Waiting for services to initialize (30s)..."
+            sleep 30
+            
+            # Check for unhealthy containers
+            if sudo docker compose ps | grep -i "unhealthy"; then
+              echo "❌ CRITICAL: Unhealthy services detected!"
+              sudo docker compose ps
+              sudo docker compose logs --tail=50
+              exit 1
+            fi
+            
+            # Check if containers are actually running
+            if ! sudo docker compose ps | grep -q "Up"; then
+              echo "❌ CRITICAL: No services are running!"
+              sudo docker compose ps
+              exit 1
+            fi
+            
+            echo "✅ HEALTH CHECK PASSED: All services are running and healthy."
+            sudo docker compose ps
             echo "NOC Guardian deployed successfully"
