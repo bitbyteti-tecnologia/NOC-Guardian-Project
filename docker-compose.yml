@@ -7,7 +7,7 @@ services:
   traefik:
     image: traefik:v2.11
     container_name: guardian-proxy
-    restart: always
+    restart: unless-stopped
     environment:
       - DOCKER_API_VERSION=1.44
     command:
@@ -24,7 +24,7 @@ services:
       # Configuração Let's Encrypt (Certificados SSL Automáticos)
       - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
       - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.myresolver.acme.email=admin@bitbyteti.tec.br" # Email para notificações de expiração
+      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL:-admin@bitbyteti.tec.br}"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
@@ -34,6 +34,11 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - guardian-net
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # ============================================================================
   # Serviço 1: Guardian Central (API Cloud)
@@ -43,15 +48,18 @@ services:
       context: ./central
       dockerfile: Dockerfile
     container_name: guardian-central
-    restart: always
+    restart: unless-stopped
     expose:
       - "8000" # Porta interna exposta apenas para o Traefik
     environment:
+      - POSTGRES_HOST=db
       - POSTGRES_USER=guardian
       - POSTGRES_PASSWORD=guardian_pass
       - POSTGRES_DB=guardian_db
       - CENTRAL_TOKEN=${CENTRAL_TOKEN}
       - TELEMETRY_MAX_BYTES=${TELEMETRY_MAX_BYTES:-1048576}
+      - GUARDIAN_SECRET_KEY=${GUARDIAN_SECRET_KEY}
+      - GUARDIAN_ENV=production
     labels:
       - "traefik.enable=true"
       # Configuração do Router (Domínio)
@@ -71,15 +79,22 @@ services:
       - "traefik.http.routers.central-ingest.tls.certresolver=myresolver"
       - "traefik.http.routers.central-ingest.middlewares=central-ratelimit"
     healthcheck:
+      # Verifica se o endpoint /health retorna HTTP 200
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).status==200 else 1)\""]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 15s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - guardian-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ============================================================================
   # Serviço 2: Guardian NODE (Coletor Edge)
@@ -89,17 +104,31 @@ services:
       context: ./node
       dockerfile: Dockerfile
     container_name: guardian-node
-    restart: always
+    restart: unless-stopped
     environment:
       # Agora aponta para o domínio público com HTTPS
       - CENTRAL_URL=https://noc.bitbyteti.tec.br/ingest/telemetry
       - NODE_ID=NODE-TEST-ARM64-01
       - AUTH_TOKEN=${AUTH_TOKEN}
+      - GUARDIAN_SECRET_KEY=${GUARDIAN_SECRET_KEY}
       - NODE_INTERVAL_SECONDS=${NODE_INTERVAL_SECONDS:-30}
+    healthcheck:
+      # Verifica se o arquivo de heartbeat foi atualizado nos últimos 2 minutos
+      test: ["CMD-SHELL", "find /tmp/guardian_node_health -mmin -2 | grep . || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     depends_on:
-      - central # Mantém dependência para garantir que a stack suba junto
+      central:
+        condition: service_healthy
     networks:
       - guardian-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ============================================================================
   # Serviço 3: Banco de Dados (TimescaleDB)
@@ -115,8 +144,19 @@ services:
       - POSTGRES_DB=guardian_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - backups:/backups
     networks:
       - guardian-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guardian -d guardian_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 # ==============================================================================
 # Redes e Volumes
@@ -127,3 +167,5 @@ networks:
 
 volumes:
   postgres_data:
+  guardian_logs:
+  backups:
