@@ -14,16 +14,43 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Resolve Configuration
+        id: config
+        run: |
+          echo "Resolving Host and User..."
+          
+          # Resolve HOST (Try Secret first, then Var)
+          if [ -n "${{ secrets.PROD_HOST }}" ]; then
+            echo "HOST found in Secrets."
+            echo "FINAL_HOST=${{ secrets.PROD_HOST }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ vars.PROD_HOST }}" ]; then
+            echo "HOST found in Variables."
+            echo "FINAL_HOST=${{ vars.PROD_HOST }}" >> $GITHUB_OUTPUT
+          else
+            echo "::error::PROD_HOST not found in Secrets or Variables!"
+            exit 1
+          fi
+
+          # Resolve USER (Try Secret first, then Var)
+          if [ -n "${{ secrets.PROD_USER }}" ]; then
+            echo "USER found in Secrets."
+            echo "FINAL_USER=${{ secrets.PROD_USER }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ vars.PROD_USER }}" ]; then
+            echo "USER found in Variables."
+            echo "FINAL_USER=${{ vars.PROD_USER }}" >> $GITHUB_OUTPUT
+          else
+            echo "::error::PROD_USER not found in Secrets or Variables!"
+            exit 1
+          fi
+
       - name: Pre-flight Diagnostics
         run: |
           echo "--- START DIAGNOSTICS ---"
-          echo "1. Checking Secrets existence..."
-          [ -n "${{ secrets.PROD_HOST }}" ] && echo "OK: Host is set" || echo "FAIL: Host is missing"
-          [ -n "${{ secrets.PROD_USER }}" ] && echo "OK: User is set" || echo "FAIL: User is missing"
-          [ -n "${{ secrets.PROD_SSH_KEY }}" ] && echo "OK: Key is set" || echo "FAIL: Key is missing"
+          HOST="${{ steps.config.outputs.FINAL_HOST }}"
+          echo "Target Host: $HOST"
           
-          echo "2. Checking Network Connectivity (Port 22)..."
-          if nc -zv -w 10 ${{ secrets.PROD_HOST }} 22; then
+          echo "Checking Network Connectivity (Port 22)..."
+          if nc -zv -w 10 $HOST 22; then
             echo "OK: Connection to Port 22 successful"
           else
             echo "FAIL: Cannot connect to Port 22. Check Firewall or IP address."
@@ -34,8 +61,8 @@ jobs:
       - name: Deploy to Production Server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
+          host: ${{ steps.config.outputs.FINAL_HOST }}
+          username: ${{ steps.config.outputs.FINAL_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           port: 22
           debug: true
