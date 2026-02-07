@@ -178,7 +178,13 @@ sudo sed -i 's/^#*UsePAM.*/UsePAM yes/' $SSHD_CONFIG
 
 # Reinicia SSH para aplicar (se syntax ok)
 if sudo sshd -t; then
-    sudo systemctl restart sshd
+    if systemctl list-units --full -all | grep -Fq "ssh.service"; then
+        sudo systemctl restart ssh || echo "⚠️ Falha ao reiniciar serviço 'ssh'"
+    elif systemctl list-units --full -all | grep -Fq "sshd.service"; then
+        sudo systemctl restart sshd || echo "⚠️ Falha ao reiniciar serviço 'sshd'"
+    else
+        echo "⚠️ Serviço SSH não identificado automaticamente. Reinicie manualmente."
+    fi
     echo "✅ SSH Hardening aplicado com sucesso."
 else
     echo "❌ Erro na configuração do SSH. Revertendo..."
